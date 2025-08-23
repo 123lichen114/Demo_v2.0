@@ -1,12 +1,20 @@
-from Data_loader import df_to_navigation_info
+from backend.Data_loader import df_to_navigation_info
 import pandas as pd
-from Handle_csv.scenario.navigation.visualization import *
-
-from Handle_csv.scenario.navigation.origin_destination_heatmap import *
-
-from Handle_csv.scenario.navigation.navigation_poi_time import *
-from Handle_csv.scenario.navigation.classify_type import *
+from collections import defaultdict
+from backend.label_source_explaination.time_regularity import plot_route_timeline
 import base64
+
+from backend.label_source_explaination.poi_preference import process_category_data
+def poi_type_analysis(data_list):
+    """生成POI类型分析数据，用于扇形图展示"""
+    # 调用poi_preference.py中的处理函数
+    category_data = process_category_data(data_list)
+    # 返回包含类型标识和数据的结构
+    return {
+        "type": "poi_type_fan_diagram",
+        "data": category_data,
+        "description": "POI类型分布扇形图（外层：大类，中层：中类，内层：小类）"
+    }
 def get_route_chart(route_json_data):
     """将图表转换为Base64编码，供前端显示"""
     buf = plot_route_timeline(route_json_data)  # 调用绘图函数
@@ -19,47 +27,11 @@ def get_route_chart(route_json_data):
             "description": "用户路线时序分布（含停留时间）"
         }
     return {"type": "text", "content": "无法生成路线图表"}
-def process_category_data(data_list):
-    """处理大中小类数据，返回供前端绘图的结构"""
-    # 读取POI类型映射表（路径需根据实际文件位置调整）
-    poi_df = pd.read_excel('/Users/lichen18/Documents/Project/Demo_v2.0/use_GaoDe_api/amap_poicode.xlsx')
-    reference_dict = {}
-    for _, row in poi_df.iterrows():
-        new_type_str = str(row['NEW_TYPE']).zfill(6)  # 确保6位编码
-        reference_dict[new_type_str] = {
-            '大类': row['大类'],
-            '中类': row['中类'],
-            '小类': row['小类']
-        }
-    
-    # 统计各分类数量
-    big_counts = defaultdict(int)
-    mid_counts = defaultdict(int)
-    sub_counts = defaultdict(int)
-    
-    for item in data_list:
-        type_code = item.get('end_typeCode')  # 假设目的地类型编码存在于end_typeCode字段
-        if type_code in reference_dict:
-            cat = reference_dict[type_code]
-            big_counts[cat['大类']] += 1
-            mid_counts[cat['中类']] += 1
-            sub_counts[cat['小类']] += 1
-    
-    # 格式化返回数据（前端绘图需要的结构）
-    return {
-        "type": "chart1",  # 标识为图表类型，供前端识别
-        "data": {
-            "big_categories": [{"name": k, "value": v} for k, v in big_counts.items()],
-            "mid_categories": [{"name": k, "value": v} for k, v in mid_counts.items()],
-            "sub_categories": [{"name": k, "value": v} for k, v in sub_counts.items()]
-        }
-    }
 
 if __name__ == '__main__':
     file_path = '/Users/lichen18/Documents/Project/Data_mining/data/data_for_analysis/HLX32B143R1309094.csv'
-    navigation_info = df_to_navigation_info(df)
     df = pd.read_csv(file_path)
-    plot_destination_time_heatmap(navigation_info)
-    fig = plot_origin_destination_heatmap(navigation_info,grid_size=10000)
+    navigation_info = df_to_navigation_info(df)
+    
     buf = plot_route_timeline(navigation_info)
     pass

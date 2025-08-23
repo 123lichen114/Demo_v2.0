@@ -1,0 +1,17 @@
+@layer utilities {
+    .transition-all-300 {
+        transition: all 300ms ease-in-out;
+    }
+    .tooltip-arrow:before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 0 10px 10px 10px;
+        border-style: solid;
+        border-color: transparent transparent rgba(30, 41, 59, 0.95) transparent;
+    }
+}
+
+/* Tailwind 配置需要保留在HTML中或通过专用配置文件配置 */
