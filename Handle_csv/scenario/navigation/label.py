@@ -4,21 +4,33 @@ from datetime import datetime, timedelta
 from Handle_csv.Util import calculate_time_diff
 import pandas as pd
 import numpy as np
-from Util import *
-from use_GaoDe_api.geo import *
+from Handle_csv.Util import *
+
 from Handle_csv.scenario.navigation.basic_info import *
 from Handle_csv.config import Config
 
 class basic_feature_label:
-    def __init__(self,poi_info_list:list[dict],config:Config) -> None:
+    def __init__(self,poi_info_list:list[dict]) -> None:
         # self.home_name = self.set_home_name(poi_info_list)
         self.poi_info_list = poi_info_list
-        self.config = config
         self.home_name = self.set_home_location()
         self.workplace = self.set_work_location()
+        self.basic_features_labels_mapping = self.get_features_labels_mapping(poi_info_list)
 
     def show_basic_feature_label(self) -> pd.DataFrame:
-        ...
+        tuples_list = []
+        value_list = []
+        for feature, labels in self.basic_features_labels_mapping.items():
+            for label in labels:
+                tuples_list.append((feature, label))
+                value_list.append(self.basic_features_labels_mapping[feature][label])
+        # 创建多级列索引
+        multi_columns = pd.MultiIndex.from_tuples(
+            tuples_list,
+            names=['feature', 'label']
+        )
+        df = pd.DataFrame([value_list],columns=multi_columns)
+        return df
 
     def get_features_labels_mapping(self,
                                     poi_info_list,
@@ -31,7 +43,7 @@ class basic_feature_label:
             if feature == "通勤基础":
                 ret_info = self.sub_classify_6(poi_info_list)
                 # print(basic_features_labels_mapping[feature])
-                # print(type(basic_features_labels_mapping[feature]))
+                # print(end_typeCode(basic_features_labels_mapping[feature]))
                 for label in labels:
                     value = ret_info[label]
                     basic_features_labels_mapping[feature][label] = ret_info[label]
@@ -59,14 +71,14 @@ class basic_feature_label:
             return self.sub_classify_4()
         
         elif feature_label_tuple == ("目的地偏好","高频目的地类型") :
-            return self.sub_classify_5(poi_info_list)
+            return self.sub_classify_5()
         
         elif feature_label_tuple == ("通勤空间","通勤方向") :
             return self.sub_classify_9(poi_info_list)
         elif feature_label_tuple == ("工作习惯","工作时长") :
-            return self.sub_classify_11(poi_info_list)
+            return self.sub_classify_11()
         elif feature_label_tuple == ("时间规律","高峰出行模式") :
-            return self.sub_classify_12(poi_info_list)
+            return self.sub_classify_12()
         else:
             return ""
 
@@ -101,7 +113,7 @@ class basic_feature_label:
         
     def sub_classify_2(self) -> str:
         # （"时间规律","出行时段偏好")
-        # 用util中get_hour统计每个时间段出现的次数 poi_info_dict的格式为 [{poi: "xxx", type: "xxx", start_time: "xxx", end_time: "xxx"}]
+        # 用util中get_hour统计每个时间段出现的次数 poi_info_dict的格式为 [{poi: "xxx", end_typeCode: "xxx", start_time: "xxx", end_time: "xxx"}]
         poi_info_list = self.poi_info_list
         time_interval = []
         for poi_item in poi_info_list:
@@ -157,27 +169,31 @@ class basic_feature_label:
     def sub_classify_4(self) -> str:
         
         # ("空间范围","出行范围")
-        poi_info_list = self.poi_info_list
         ad_file_path = "/Users/lichen18/Documents/Project/Demo_v2.0/use_GaoDe_api/AMap_adcode_citycode.xlsx"
         ad_df = pd.read_excel(ad_file_path)
-
-
         #第一列是中文名，市/区的名称，一列是adcode，一列是citycode,现在要通过poi_info_list中的adcode字段，通过找表得到中文名和citycode
         city_district = {}
         city = {}
-        for poi_item in poi_info_list:
-            adcode = poi_item['adcode']
-            citycode = ad_df[ad_df['adcode'] == adcode]['citycode'].values[0]
-            district = ad_df[ad_df['adcode'] == adcode]['中文名'].values[0]
-            if citycode not in city:
-                city[citycode] = 1
-            else:
-                city[citycode] += 1
-            key = (citycode, district)
-            if key not in city_district:
-                city_district[key] = 1
-            else:
-                city_district[key] += 1
+        for poi_item in self.poi_info_list:
+            adcode = str(poi_item['end_adcode'])
+
+            for index, row in ad_df.iterrows():
+                if adcode == str(row['adcode']):
+                    citycode = row['citycode']
+                    district = row['中文名']
+                    if citycode not in city:
+                        city[citycode] = 1
+                    else:
+                        city[citycode] += 1
+                    key = (citycode, district)
+                    if key not in city_district:
+                        city_district[key] = 1
+                    else:
+                        city_district[key] += 1
+                    break
+                else:
+                    continue
+            
             
         if not city_district:
             return "未知活动范围"  # 或者根据业务需求返回其他默认值
@@ -191,16 +207,16 @@ class basic_feature_label:
 
 
 
-    def sub_classify_5(self,poi_info_list) -> str:
+    def sub_classify_5(self) -> str:
         # ("目的地偏好","高频目的地类型")
-        # 统计每个地点类型出现的次数 poi_info_dict的格式为 [{poi: "xxx", type: "xxx", start_time: "xxx", end_time: "xxx"}]
+        # 统计每个地点类型出现的次数 poi_info_dict的格式为 [{poi: "xxx", end_typeCode: "xxx", start_time: "xxx", end_time: "xxx"}]
         activity_types = {}
-        for poi_item in poi_info_list:
+        for poi_item in self.poi_info_list:
             if poi_item['poi'] != self.home_name and poi_item['poi'] != self.workplace:
-                if poi_item['type'] in activity_types:
-                    activity_types[poi_item['type']] += 1
+                if poi_item['end_typeCode'] in activity_types:
+                    activity_types[poi_item['end_typeCode']] += 1
                 else:
-                    activity_types[poi_item['type']] = 1
+                    activity_types[poi_item['end_typeCode']] = 1
         if activity_types == {}:
             return "无出行记录"
         # 把activity_types这个字典按value大小排序，输出[(key, value), (key, value), ...]
@@ -226,7 +242,7 @@ class basic_feature_label:
                 {
                 'start_location':self.start_location,
                 'poi':self.poi_name,
-                'type':self.poi_type,
+                'end_typeCode':self.poi_type,
                 'poi_location':self.poi_location,
                 'start_time':self.start_time,
                 '':self.end_time
@@ -264,11 +280,13 @@ class basic_feature_label:
                     # 记录两个行程的时间段
                     location_pairs[sorted_loc].append({
                         'start': df.loc[i, 'start_datetime'],
-                        'end': df.loc[i, 'end_datetime']
+                        'end': df.loc[i, 'end_datetime'],
+                        'distance': df.loc[i, 'distance'],
                     })
                     location_pairs[sorted_loc].append({
                         'start': df.loc[j, 'start_datetime'],
-                        'end': df.loc[j, 'end_datetime']
+                        'end': df.loc[j, 'end_datetime'],
+                        'distance': df.loc[j, 'distance'],
                     })
         
         # 判断是否有符合条件的地点对（相似时间段）
@@ -276,13 +294,13 @@ class basic_feature_label:
         # 定义时间差阈值（30分钟），可根据需要调整
         TIME_THRESHOLD = timedelta(minutes=30)
         
-        for pair, time_ranges in location_pairs.items():
+        for pair, pair_info in location_pairs.items():
             # 需要至少两对不同天的行程
-            if len(time_ranges) >= 2:
+            if len(pair_info) >= 2:
                 # 检查时间段是否相似
                 # 计算平均开始时间和结束时间
-                start_times = [tr['start'] for tr in time_ranges]
-                end_times = [tr['end'] for tr in time_ranges]
+                start_times = [tr['start'] for tr in pair_info]
+                end_times = [tr['end'] for tr in pair_info]
                 
                 # 计算平均开始时间（转换为时间戳计算）
                 avg_start_ts = sum(dt.timestamp() for dt in start_times) / len(start_times)
@@ -294,7 +312,7 @@ class basic_feature_label:
                 
                 # 检查所有时间是否在平均时间的阈值范围内
                 all_similar = True
-                for tr in time_ranges:
+                for tr in pair_info:
                     if (abs(tr['start'] - avg_start) > TIME_THRESHOLD or 
                         abs(tr['end'] - avg_end) > TIME_THRESHOLD):
                         all_similar = False
@@ -303,18 +321,23 @@ class basic_feature_label:
                 if all_similar:
                     # 格式化平均时间段
                     avg_time_str = f"{avg_start.strftime('%H:%M:%S')}-{avg_end.strftime('%H:%M:%S')}"
-                    result_pairs.append((pair[0], pair[1], avg_time_str))
+                    # result_pairs.append((pair[0], pair[1], avg_time_str ,pair_info['distance']))
+                    result_pairs.append({
+                        'avg_time_str': avg_time_str,
+                        'distance': pair_info['distance']
+                    })
         
         if result_pairs:
             #计算规律行程的平均距离，用get_driving_path_distance_by_address计算
             avg_distance = 0
             for pair in result_pairs:
-                avg_distance += get_driving_path_distance_by_address(self.city,pair[0], pair[1])
+                avg_distance += pair['distance']
             avg_distance /= len(result_pairs)
             #计算规律行程的平均时间，用calculate_time_diff计算
             avg_time = 0
             for pair in result_pairs:
-                avg_time += calculate_time_diff(pair[2].split('-')[0],pair[2].split('-')[1],time_format="%H:%M:%S")/3600
+                t = pair['avg_time_str']
+                avg_time += calculate_time_diff(t.split('-')[0],t.split('-')[1],time_format="%H:%M:%S")/3600
             avg_time /= len(result_pairs)
             ret_info = {
                 "规律性行程":f"两点通勤者:{result_pairs}",
@@ -330,66 +353,6 @@ class basic_feature_label:
             }
             return ret_info
     
-    def sub_classify_10(self,poi_info_list) :
-        '''
-        poi_info_list = [
-        {
-            'vin': 'HLX32B143R1309094',
-            'start_location': '119.575804,39.932795',
-            'end_location': '119.488542,39.813902',
-            'end_adcode': 130304,
-            'end_typeCode': '061207',
-            'end_address': '北戴河中海滩路',
-            'poi': '老虎石海上公园',
-            'start_time': '2025-05-18 05:56:08.925000',
-            'end_time': '2025-05-18 06:42:40.925000',
-            'distance': 17089,
-            'duration': 2792
-        },
-        {
-            'vin': 'ABC12345678901234',
-            'start_location': '118.575804,38.932795',
-            'end_location': '118.488542,38.813902',
-            'end_adcode': 120304,
-            'end_typeCode': '010100',
-            'end_address': '某海滩路',
-            'poi': '某公园',
-            'start_time': '2025-05-19 07:56:08.925000',
-            'end_time': '2025-05-19 08:42:40.925000',
-            'distance': 15089,
-            'duration': 2592
-        }
-    ]
-        有这样一个列表，判断用户是否有规律性行程，如果有，返回行程的地点对，行程的平均距离，行程的平均时间
-        如果没有，返回无规律性行程，无，无
-        
-        '''
-        if len(poi_info_list) == 0:
-            return {"规律性行程":"无导航出行记录，无法判断","规律行程距离": "无","规律行程耗时": "无"
-            }
-        # 转换为DataFrame便于处理
-        df = pd.DataFrame(poi_info_list)
-        
-        # 解析时间
-        df['start_datetime'] = df['start_time'].apply(parse_datetime)
-        df['end_datetime'] = df['end_time'].apply(parse_datetime)
-        df['date'] = df['start_datetime'].apply(lambda x: x.date())
-        # 提取所有可能的地点对（按时间顺序）
-        location_pairs = defaultdict(list)
-        for i in range(len(poi_info_list)):
-            for j in range(i + 1, len(poi_info_list)):
-                loc1 = poi_info_list[i]['poi']
-                loc2 = poi_info_list[j]['poi']
-                sorted_loc = tuple(sorted([loc1, loc2]))
-                location_pairs[sorted_loc].append({
-                    'start': df.loc[i, 'start_datetime'],
-                    'end': df.loc
-
-                })
-
-        
-
-
 
     def sub_classify_7(self,poi_info_list) -> str:
         # ("通勤基础","通勤时长")
@@ -427,9 +390,9 @@ class basic_feature_label:
                 return "标准工时"
         return "work_time_list is []"
     
-    def sub_classify_12(self,poi_info_list) -> str:
+    def sub_classify_12(self) -> str:
         # ("时间规律","高峰出行模式")
-        # 用util中get_hour统计每个时间段出现的次数 poi_info_dict的格式为 [{poi: "xxx", type: "xxx", start_time: "xxx", end_time: "xxx"}]
+        # 用util中get_hour统计每个时间段出现的次数 poi_info_dict的格式为 [{poi: "xxx", end_typeCode: "xxx", start_time: "xxx", end_time: "xxx"}]
         poi_info_list = self.poi_info_list
         time_interval = []
         for poi_item in poi_info_list:

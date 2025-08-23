@@ -1,6 +1,8 @@
 from flask import Flask, render_template
 from get_vis import *
 app = Flask(__name__)
+app.config['STATIC_URL'] = 'static'
+app.config['STATIC_FOLDER'] = 'static'
 import pandas as pd
 file_path = '/Users/lichen18/Documents/Project/Data_mining/data/data_for_analysis/HLX32B143R1309094.csv'
 df = pd.read_csv(file_path)
