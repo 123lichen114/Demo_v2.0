@@ -1,10 +1,13 @@
 import requests
 import os
 import json
-def draw_ordered_points(locations, key, size="800*600", scale=1,
-                        line_color="0x0000FF", line_weight=5,
+def draw_ordered_points(locations, key, size="800*600", 
+                        scale=1,
+                        line_color="0x0000FF", 
+                        line_weight=5,
                         marker_color="0xFF0000", label_color="0xFFFFFF",
-                        label_bg_color="0x5288d8", save_path=None):
+                        label_bg_color="0x5288d8", 
+                        save_path=None):
     """
     绘制按顺序连接的经纬度点，使用labels字段为地点编号（支持任意序号）
     
@@ -138,7 +141,6 @@ if __name__ == "__main__":
         [115.410000, 39.520000], # 3
         [117.410000, 39.120000], # 4
         [113.410000, 39.020000], # 5
-
         [116.000000, 39.200000], # 9
         [115.000000, 39.100000], # 10（超过原marker label的9限制）
     ]
@@ -153,7 +155,6 @@ if __name__ == "__main__":
         marker_color="0xFF5733", # 橙色标注点
         label_color="0x000000",  # 黑色文字
         label_bg_color="0xFFFF00", # 黄色背景
-        save_path="use_GaoDe_api/route_map_with_labels.png"
     )
     
     if map_data:

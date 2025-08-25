@@ -3,7 +3,7 @@ import pandas as pd
 def process_category_data(data_list):
     """处理大中小类数据，返回包含层级关系的结构（大类包含中类，中类包含小类）"""
     # 读取POI类型映射表（路径需根据实际文件位置调整）
-    poi_df = pd.read_excel('/Users/lichen18/Documents/Project/Demo_v2.0/use_GaoDe_api/amap_poicode.xlsx')
+    poi_df = pd.read_excel('backend/use_api/use_gaode/amap_poicode.xlsx')
     reference_dict = {}
     for _, row in poi_df.iterrows():
         new_type_str = str(row['NEW_TYPE']).zfill(6)  # 确保6位编码

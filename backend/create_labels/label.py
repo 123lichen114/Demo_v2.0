@@ -1,9 +1,9 @@
 import json
-from use_llm.My_LLM import ask_LLMmodel
+from backend.use_api.use_llm.My_LLM import ask_LLMmodel
 from datetime import datetime, timedelta
 import pandas as pd
 from backend.Util import *
-
+from backend.use_api.use_gaode.get_poitype import get_types_from_table
 
 class basic_feature_label:
     def __init__(self,poi_info_list:list[dict]) -> None:
@@ -15,17 +15,19 @@ class basic_feature_label:
 
     def show_basic_feature_label(self) -> pd.DataFrame:
         tuples_list = []
+        label_list = []
         value_list = []
         for feature, labels in self.basic_features_labels_mapping.items():
             for label in labels:
                 tuples_list.append((feature, label))
+                label_list.append(label)
                 value_list.append(self.basic_features_labels_mapping[feature][label])
         # 创建多级列索引
         multi_columns = pd.MultiIndex.from_tuples(
             tuples_list,
             names=['feature', 'label']
         )
-        df = pd.DataFrame([value_list],columns=multi_columns)
+        df = pd.DataFrame([value_list],columns=label_list)
         return df
 
     def get_features_labels_mapping(self,
@@ -165,7 +167,7 @@ class basic_feature_label:
     def sub_classify_4(self) -> str:
         
         # ("空间范围","出行范围")
-        ad_file_path = "/Users/lichen18/Documents/Project/Demo_v2.0/use_GaoDe_api/AMap_adcode_citycode.xlsx"
+        ad_file_path = "backend/use_api/use_gaode/AMap_adcode_citycode.xlsx"
         ad_df = pd.read_excel(ad_file_path)
         #第一列是中文名，市/区的名称，一列是adcode，一列是citycode,现在要通过poi_info_list中的adcode字段，通过找表得到中文名和citycode
         city_district = {}
@@ -208,17 +210,18 @@ class basic_feature_label:
         # 统计每个地点类型出现的次数 poi_info_dict的格式为 [{poi: "xxx", end_typeCode: "xxx", start_time: "xxx", end_time: "xxx"}]
         activity_types = {}
         for poi_item in self.poi_info_list:
-            if poi_item['poi'] != self.home_name and poi_item['poi'] != self.workplace:
-                if poi_item['end_typeCode'] in activity_types:
-                    activity_types[poi_item['end_typeCode']] += 1
-                else:
-                    activity_types[poi_item['end_typeCode']] = 1
+            if pd.notna(poi_item['end_typeCode']) and poi_item['poi'] != self.home_name and poi_item['poi'] != self.workplace:
+                    if poi_item['end_typeCode'] in activity_types :
+                        activity_types[poi_item['end_typeCode']] += 1
+                    else:
+                        activity_types[poi_item['end_typeCode']] = 1
         if activity_types == {}:
             return "无出行记录"
         # 把activity_types这个字典按value大小排序，输出[(key, value), (key, value), ...]
         high_frequency_activity_types = sorted(activity_types.items(), key=lambda x: x[1], reverse=True)
+        high_frequency_poi_type = get_types_from_table(high_frequency_activity_types[0][0])
         #返回最高频地点类型
-        return high_frequency_activity_types[0][0]
+        return high_frequency_poi_type
 
     
     def sub_classify_6(self,poi_info_list):

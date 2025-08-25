@@ -199,11 +199,7 @@ def compare_geometric_centrality(
 
 # 示例用法
 if __name__ == "__main__":
-    # 静态可视化示例
-    # visualize_boundary("北京市", interactive=False)
-    
-    # #交互式可视化示例（会生成HTML文件）
-    # visualize_boundary("上海市", interactive=True, save_path="use_GaoDe_api/shanghai_boundary.html")
+
     
     # #可视化其他地区
     # visualize_boundary("广东省")
@@ -213,6 +209,3 @@ if __name__ == "__main__":
     result = compare_geometric_centrality("北京市", beijing_point1, beijing_point2)
     print(result)
     boundary = get_boundary_from_api('上海市')
-    #把boundary写入json文件
-    with open('use_GaoDe_api/boundary.json','w',encoding='utf-8') as f:
-        f.write(json.dumps(boundary,ensure_ascii=False,indent=2))

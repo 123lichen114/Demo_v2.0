@@ -6,7 +6,7 @@
     <title>用户画像可视化</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"> -->
 </head>
 <!-- 引入D3.js -->
 
@@ -16,7 +16,24 @@
             <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-dark mb-2">用户画像分析</h1>
             <p class="text-gray-500 max-w-2xl mx-auto">多层次用户特征标签体系</p>
         </header>
-        
+        <!-- 添加VIN码选择栏 -->
+        <div class="mb-6 max-w-3xl mx-auto">
+            <div class="relative">
+                <input 
+                    type="text" 
+                    id="vinInput" 
+                    placeholder="输入VIN码搜索..." 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                <!-- 下拉选择框 -->
+                <div id="vinDropdown" class="absolute left-0 right-0 mt-2 bg-white rounded-lg shadow-lg z-10 hidden">
+                    <div class="p-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 max-h-60 overflow-y-auto">
+                        <!-- VIN码选项会通过JS动态填充 -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
         <div class="space-y-10" id="profile-container"></div>
         
         <!-- 自定义模块数据展示区域 -->
@@ -56,6 +73,7 @@
     <script>
         // 接收后端传递的处理后的数据（关键：必须加|tojson|safe）
         window.processedData = {{ processed_data|tojson|safe }};
+        console.log("后端注入：", window.processedData);
     </script>
     
     <!-- 外部JS文件 -->

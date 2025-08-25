@@ -109,15 +109,26 @@ def get_scenario_info(df,scenario_related_func)  -> pd.DataFrame:
             all_scenario_info = pd.concat([all_scenario_info, row_df], ignore_index=True)
     return all_scenario_info
 
+
+def get_date_strp(format_date_str,date_format = "%Y-%m-%d %H:%M:%S.%f"):
+    try:
+        date = datetime.strptime(format_date_str, date_format)
+    except ValueError:
+        try:
+            date = datetime.strptime(format_date_str, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            raise ValueError(f"无法解析时间格式: {format_date_str}")
+    return date
+
 def calculate_time_diff(format_start_time, format_end_time ,time_format = "%Y-%m-%d %H:%M:%S.%f"):
-    start_time = datetime.strptime(format_start_time, time_format)
-    end_time = datetime.strptime(format_end_time, time_format)
+    start_time = get_date_strp(format_start_time, time_format)
+    end_time = get_date_strp(format_end_time, time_format)
     return (end_time - start_time).total_seconds()
 
 #判断某一天是周几
-def get_weekday(format_date_str):
-    date_format = "%Y-%m-%d %H:%M:%S.%f"
-    date = datetime.strptime(format_date_str, date_format)
+def get_weekday(format_date_str,date_format = "%Y-%m-%d %H:%M:%S.%f"):
+    #识别 多种时间格式 %Y-%m-%d %H:%M:%S.%f  或者 %Y-%m-%d %H:%M:%S
+    date = get_date_strp(format_date_str,date_format)
     return date.weekday()
 
 #判断某个时间是否属于工作日
@@ -127,12 +138,13 @@ def is_weekday(format_date_str):
 
 #判断一个时间处于一天中的几时
 def get_hour(format_date_str):
-    date_format = "%Y-%m-%d %H:%M:%S.%f"
-    date = datetime.strptime(format_date_str, date_format)
+    date = get_date_strp(format_date_str)
     return date.hour
 
 #提取日期
 def get_date(format_date_str):
-    date_format = "%Y-%m-%d %H:%M:%S.%f"
-    date = datetime.strptime(format_date_str, date_format)
+    # date_format = "%Y-%m-%d %H:%M:%S.%f"
+    # date = datetime.strptime(format_date_str, date_format)
+    date = get_date_strp(format_date_str)
     return date.date()
+

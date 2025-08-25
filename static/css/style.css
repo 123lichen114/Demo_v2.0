@@ -12,6 +12,55 @@
         border-style: solid;
         border-color: transparent transparent rgba(30, 41, 59, 0.95) transparent;
     }
+    
 }
 
 /* Tailwind 配置需要保留在HTML中或通过专用配置文件配置 */
+
+
+/* 分割线样式 */
+.split-resizer {
+    height: 100%;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.split-resizer:hover {
+    background-color: #818CF8; /* 使用secondary颜色 */
+}
+
+.split-resizer::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 16px;
+    transform: translate(-50%, -50%);
+    background-color: inherit;
+    border-radius: 2px;
+}
+
+/* 左右容器样式优化 */
+.split-left, .split-right {
+    transition: width 0.2s ease;
+}
+
+/* 确保图表容器有足够高度 */
+#profile-container .bg-white {
+    min-height: 500px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .split-left, .split-right {
+        width: 100% !important;
+        min-width: auto !important;
+    }
+    .split-resizer {
+        display: none; /* 移动端隐藏分割线，使用堆叠布局 */
+    }
+    .flex {
+        flex-direction: column;
+    }
+}
