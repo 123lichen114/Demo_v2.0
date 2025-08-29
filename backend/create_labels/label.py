@@ -48,7 +48,7 @@ class basic_feature_label:
                 continue
             for label in labels:
                 basic_features_labels_mapping[feature][label] = self.classify((feature,label),poi_info_list)
-                
+                # print(f"Classified {feature} - {label}: {basic_features_labels_mapping[feature][label]}")
         return basic_features_labels_mapping
 
 
@@ -80,16 +80,17 @@ class basic_feature_label:
         else:
             return ""
 
-
-
     def set_home_location(self):
-        input = self.poi_info_list
+        input = [item['poi'] for item in self.poi_info_list]
         prompt = f"请分析这个列表:{input}，结合其type字段，帮我分析哪个地点（也就是poi字段）是用户的居住地，直接给出对应的地点名称（列表中其中一项的poi字段值）;如果不能判断出用户的居住地，则直接回答 无法确认用户居住地\n"
         return ask_LLMmodel(input,prompt)
     
     def set_work_location(self):
-        input = self.poi_info_list
+        # 输入参数为POI信息列表
+        input = [item['poi'] for item in self.poi_info_list]
+        # 构建提示词，要求LLM分析列表中的地点信息，结合type字段判断用户工作或学习地点
         prompt = f"请分析这个列表:{input}，结合其type字段，帮我分析哪个地点（也就是poi字段）是用户的工作或学习的地点，并直接给出对应的地点名称（列表中其中一项的poi字段值）,如果不能判断出用户的居住地，则直接回答 无法确认用户工作地点\n"
+        # 调用LLM模型进行判断并返回结果
         return ask_LLMmodel(input,prompt)
 
     def sub_classify_1(self) -> str:
@@ -218,7 +219,10 @@ class basic_feature_label:
         if activity_types == {}:
             return "无出行记录"
         # 把activity_types这个字典按value大小排序，输出[(key, value), (key, value), ...]
+        # print("activity_types:", activity_types)
+
         high_frequency_activity_types = sorted(activity_types.items(), key=lambda x: x[1], reverse=True)
+        # print("high_frequency_activity_types:", high_frequency_activity_types)
         high_frequency_poi_type = get_types_from_table(high_frequency_activity_types[0][0])
         #返回最高频地点类型
         return high_frequency_poi_type

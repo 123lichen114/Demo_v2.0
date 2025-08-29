@@ -1,6 +1,5 @@
 from backend.Data_loader import df_to_navigation_info
 import pandas as pd
-from collections import defaultdict
 from backend.label_source_explaination.time_regularity import process_route_timeline_data
 
 from backend.label_source_explaination.poi_preference import process_category_data

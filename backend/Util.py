@@ -2,13 +2,8 @@ import json
 import re
 import pandas as pd
 # 新增：导入绘图所需库
-import matplotlib.pyplot as plt
 import numpy as np
-from datetime import datetime,timedelta
-from matplotlib.dates import DateFormatter, DayLocator
-import matplotlib.colors as mcolors
-from io import BytesIO
-from collections import defaultdict
+from datetime import datetime
 
 def read_json_as_string(json_path):
     with open(json_path, 'r', encoding='utf-8') as f:
